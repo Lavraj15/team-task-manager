@@ -1,12 +1,18 @@
 import Project from "../models/Project.js";
 
 export const createProject = async (req, res) => {
-  const project = new Project({
-    ...req.body,
-    createdBy: req.user.id
-  });
-  await project.save();
-  res.json(project);
+  try {
+    const project = new Project({
+      name: req.body.name,   // 🔥 MUST
+      userId: req.user.id
+    });
+
+    await project.save();
+    res.json(project);
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
 };
 
 export const getProjects = async (req, res) => {
