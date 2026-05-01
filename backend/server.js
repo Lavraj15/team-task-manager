@@ -28,11 +28,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 🔥 frontend serve (APP ke baad likhna)
-app.use(express.static(path.join(__dirname, "../frontend/build")));
 
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
-});
 
 // DB connect
 mongoose.connect(process.env.MONGO_URI)
