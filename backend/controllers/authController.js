@@ -7,6 +7,11 @@ export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json("User already exists");
+    }
+
     const hashed = await bcrypt.hash(password, 10);
 
     const user = new User({ name, email, password: hashed });
@@ -18,7 +23,7 @@ export const signup = async (req, res) => {
   }
 };
 
-// Login
+// 🔥 IMPORTANT (ye missing hoga)
 export const login = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -30,7 +35,7 @@ export const login = async (req, res) => {
     if (!match) return res.status(400).json("Wrong password");
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id },
       process.env.JWT_SECRET
     );
 

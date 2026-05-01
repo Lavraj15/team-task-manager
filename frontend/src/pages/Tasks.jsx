@@ -7,8 +7,14 @@ export default function Tasks() {
   const [form, setForm] = useState({ title: "", dueDate: "" });
   const [editId, setEditId] = useState(null);
 
-  const fetchTasks = () => {
-    API.get("/tasks").then(res => setTasks(res.data));
+  // ✅ FETCH TASKS
+  const fetchTasks = async () => {
+    try {
+      const res = await API.get("/tasks");
+      setTasks(res.data);
+    } catch (err) {
+      console.log("FETCH ERROR:", err.response?.data || err.message);
+    }
   };
 
   useEffect(() => {
@@ -17,22 +23,37 @@ export default function Tasks() {
 
   // ✅ CREATE / UPDATE
   const handleSubmit = async () => {
-    if (editId) {
-      await API.put(`/tasks/${editId}`, form);
-      setEditId(null);
-    } else {
-      await API.post("/tasks", form);
-    }
+    try {
+      if (!form.title) {
+        alert("Title required");
+        return;
+      }
 
-    setForm({ title: "", dueDate: "" });
-    fetchTasks();
+      if (editId) {
+        await API.put(`/tasks/${editId}`, form);
+        setEditId(null);
+      } else {
+        await API.post("/tasks", form);
+      }
+
+      setForm({ title: "", dueDate: "" });
+      fetchTasks();
+
+    } catch (err) {
+      console.log("TASK ERROR:", err.response?.data || err.message);
+      alert("Task failed ❌");
+    }
   };
 
   // ✅ DELETE
   const deleteTask = async (id) => {
-    if (!window.confirm("Delete task?")) return;
-    await API.delete(`/tasks/${id}`);
-    fetchTasks();
+    try {
+      if (!window.confirm("Delete task?")) return;
+      await API.delete(`/tasks/${id}`);
+      fetchTasks();
+    } catch (err) {
+      console.log("DELETE ERROR:", err);
+    }
   };
 
   // ✅ EDIT
@@ -44,10 +65,14 @@ export default function Tasks() {
     setEditId(task._id);
   };
 
-  // ✅ STATUS UPDATE (🔥 Start / Done)
+  // ✅ STATUS UPDATE
   const updateStatus = async (id, status) => {
-    await API.put(`/tasks/${id}`, { status });
-    fetchTasks();
+    try {
+      await API.put(`/tasks/${id}`, { status });
+      fetchTasks();
+    } catch (err) {
+      console.log("STATUS ERROR:", err);
+    }
   };
 
   return (
@@ -60,14 +85,16 @@ export default function Tasks() {
           value={form.title}
           placeholder="Task Title"
           className="border p-2 rounded"
-          onChange={(e)=>setForm({...form,title:e.target.value})}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
         />
+
         <input
           type="date"
           value={form.dueDate}
           className="border p-2 rounded"
-          onChange={(e)=>setForm({...form,dueDate:e.target.value})}
+          onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
         />
+
         <button
           onClick={handleSubmit}
           className="bg-blue-500 text-white px-4 rounded"
@@ -78,40 +105,41 @@ export default function Tasks() {
 
       {/* TASK LIST */}
       <div className="grid grid-cols-2 gap-4">
-        {tasks.map(t => (
+        {tasks?.map((t) => (
           <div key={t._id} className="bg-white p-4 rounded-xl shadow">
             <h3 className="font-bold">{t.title}</h3>
             <p>Status: {t.status}</p>
+            <p>Due: {t.dueDate?.split("T")[0]}</p>
 
             <div className="flex flex-wrap gap-2 mt-3">
 
-              {/* 🔥 START */}
+              {/* START */}
               <button
-                onClick={()=>updateStatus(t._id,"in-progress")}
+                onClick={() => updateStatus(t._id, "in-progress")}
                 className="bg-yellow-400 px-2 py-1 rounded"
               >
                 Start
               </button>
 
-              {/* 🔥 DONE */}
+              {/* DONE */}
               <button
-                onClick={()=>updateStatus(t._id,"done")}
+                onClick={() => updateStatus(t._id, "done")}
                 className="bg-green-500 text-white px-2 py-1 rounded"
               >
                 Done
               </button>
 
-              {/* ✏️ EDIT */}
+              {/* EDIT */}
               <button
-                onClick={()=>editTask(t)}
+                onClick={() => editTask(t)}
                 className="bg-blue-400 px-2 py-1 rounded"
               >
                 Edit
               </button>
 
-              {/* ❌ DELETE */}
+              {/* DELETE */}
               <button
-                onClick={()=>deleteTask(t._id)}
+                onClick={() => deleteTask(t._id)}
                 className="bg-red-500 text-white px-2 py-1 rounded"
               >
                 Delete
