@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://team-task-manager-production-2955.up.railway.app"
+  baseURL: "https://team-task-manager-2-d7ov.onrender.com/api"
 });
 
 // 🔥 token auto send
