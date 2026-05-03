@@ -8,6 +8,7 @@ export default function Navbar() {
 
       <div className="flex gap-6">
         <Link to="/dashboard" className="hover:text-gray-300">Dashboard</Link>
+        <Link to="/admin" className="hover:text-red-300">Manage Users</Link>
         <Link to="/projects" className="hover:text-gray-300">Projects</Link>
         <Link to="/tasks" className="hover:text-gray-300">Tasks</Link>
         <Link to="/login" className="hover:text-red-400">Logout</Link>

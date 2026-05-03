@@ -16,13 +16,13 @@ export default function Tasks() {
   useEffect(() => {
     API.get("/projects")
       .then(res => setProjects(res.data))
-      .catch(err => console.log(err));
+      .catch(err => console.log("PROJECT ERROR:", err));
   }, []);
 
-  // ✅ LOAD TASKS (🔥 ALL TASKS FIRST)
+  // ✅ LOAD TASKS (🔥 FIXED)
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    fetchTasks(projectId);
+  }, [projectId]);
 
   const fetchTasks = async (id) => {
     try {
@@ -36,46 +36,67 @@ export default function Tasks() {
       setTasks(res.data);
 
     } catch (err) {
-      console.log("TASK ERROR:", err);
+      console.log("TASK FETCH ERROR:", err.response?.data || err.message);
     }
   };
 
   // ✅ CREATE / UPDATE
   const handleSubmit = async () => {
-    try {
-      if (!projectId) {
-        alert("Select project first ❗");
-        return;
-      }
+  try {
+    console.log("FORM:", form);
+    console.log("PROJECT ID:", projectId);
 
-      if (!form.title) {
-        alert("Title required");
-        return;
-      }
-
-      if (editId) {
-        await API.put(`/tasks/${editId}`, form);
-        setEditId(null);
-      } else {
-        await API.post("/tasks", {
-          ...form,
-          projectId
-        });
-      }
-
-      setForm({ title: "", dueDate: "" });
-      fetchTasks(projectId);
-
-    } catch (err) {
-      alert("Task failed ❌");
+    if (!projectId) {
+      alert("Select project first ❗");
+      return;
     }
-  };
+
+    if (!form.title) {
+      alert("Title required");
+      return;
+    }
+
+    if (editId) {
+      const res = await API.put(`/tasks/${editId}`, form);
+
+      // 🔥 update UI directly
+      setTasks(prev =>
+        prev.map(t => t._id === editId ? res.data : t)
+      );
+
+      setEditId(null);
+
+    } else {
+      const res = await API.post("/tasks", {
+        ...form,
+        projectId
+      });
+
+      console.log("CREATED TASK:", res.data);
+
+      // 🔥 ADD DIRECTLY (MAIN FIX)
+      setTasks(prev => [res.data, ...prev]);
+    }
+
+    setForm({ title: "", dueDate: "" });
+
+  } catch (err) {
+    console.log("TASK ERROR:", err.response?.data || err.message);
+    alert("Task failed ❌");
+  }
+};
 
   // ✅ DELETE
   const deleteTask = async (id) => {
-    if (!window.confirm("Delete task?")) return;
-    await API.delete(`/tasks/${id}`);
-    fetchTasks(projectId);
+    try {
+      if (!window.confirm("Delete task?")) return;
+
+      await API.delete(`/tasks/${id}`);
+      fetchTasks(projectId);
+
+    } catch (err) {
+      console.log("DELETE ERROR:", err);
+    }
   };
 
   // ✅ EDIT
@@ -87,10 +108,15 @@ export default function Tasks() {
     setEditId(task._id);
   };
 
-  // ✅ STATUS
+  // ✅ STATUS UPDATE
   const updateStatus = async (id, status) => {
-    await API.put(`/tasks/${id}`, { status });
-    fetchTasks(projectId);
+    try {
+      await API.put(`/tasks/${id}`, { status });
+      fetchTasks(projectId);
+
+    } catch (err) {
+      console.log("STATUS ERROR:", err);
+    }
   };
 
   return (
@@ -103,14 +129,10 @@ export default function Tasks() {
           : "All Tasks"}
       </h1>
 
-      {/* DROPDOWN */}
+      {/* PROJECT DROPDOWN */}
       <select
         value={projectId}
-        onChange={(e) => {
-          const id = e.target.value;
-          setProjectId(id);
-          fetchTasks(id);
-        }}
+        onChange={(e) => setProjectId(e.target.value)}
         className="border p-2 rounded mb-4"
       >
         <option value="">All Projects</option>
@@ -156,7 +178,6 @@ export default function Tasks() {
           <div key={t._id} className="bg-white p-4 rounded-xl shadow">
             <h3 className="font-bold">{t.title}</h3>
 
-            {/* 🔥 PROJECT NAME */}
             <p className="text-sm text-gray-500">
               Project: {t.projectId?.name || "N/A"}
             </p>

@@ -1,10 +1,12 @@
 import Project from "../models/Project.js";
 
+// ✅ CREATE PROJECT
 export const createProject = async (req, res) => {
   try {
     const project = new Project({
-      name: req.body.name,   // 🔥 MUST
-      userId: req.user.id
+      name: req.body.name,
+      admin: req.user.id,
+      members: [req.user.id]
     });
 
     await project.save();
@@ -15,21 +17,43 @@ export const createProject = async (req, res) => {
   }
 };
 
+// ✅ GET PROJECTS
 export const getProjects = async (req, res) => {
-  const projects = await Project.find();
-  res.json(projects);
+  try {
+    const projects = await Project.find({
+      members: req.user.id   // 🔥 user ke projects
+    }).populate("members", "name email");
+
+    res.json(projects);
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
 };
 
+// ✅ UPDATE PROJECT
 export const updateProject = async (req, res) => {
-  const updated = await Project.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(updated);
+  try {
+    const updated = await Project.findByIdAndUpdate(
+      req.params.id,
+      { name: req.body.name },
+      { new: true }
+    );
+
+    res.json(updated);
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
 };
 
+// ✅ DELETE PROJECT
 export const deleteProject = async (req, res) => {
-  await Project.findByIdAndDelete(req.params.id);
-  res.json({ msg: "Deleted" });
+  try {
+    await Project.findByIdAndDelete(req.params.id);
+    res.json({ msg: "Project deleted" });
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
 };

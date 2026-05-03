@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
+import AdminPanel from "./pages/AdminPanel";
 import Tasks from "./pages/Tasks";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -24,6 +25,11 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminPanel />
           </ProtectedRoute>
         } />
 

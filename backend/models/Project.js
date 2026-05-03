@@ -5,10 +5,18 @@ const projectSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  userId: {
+
+  admin: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
-  }
+  },
+
+  members: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
+  ]
 });
 
 export default mongoose.model("Project", projectSchema);

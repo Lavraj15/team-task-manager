@@ -14,7 +14,7 @@ export const signup = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const user = new User({ name, email, password: hashed });
+    const user = new User({ name, email, password: hashed, role: "admin" });
     await user.save();
 
     res.json(user);
@@ -31,15 +31,26 @@ export const login = async (req, res) => {
     if (!user) return res.status(404).json("User not found");
 
     const match = await bcrypt.compare(req.body.password, user.password);
-
     if (!match) return res.status(400).json("Wrong password");
 
+    // 🔥 AUTO ADMIN (simple logic)
+    if (!user.role) {
+      user.role = "admin";
+      await user.save();
+    }
+
+    // ✅ FIXED JWT
     const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET
+      {
+        id: user._id,
+        role: user.role   // 🔥 MUST
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
     res.json({ token, user });
+
   } catch (err) {
     res.status(500).json(err.message);
   }

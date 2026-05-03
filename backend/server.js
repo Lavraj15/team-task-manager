@@ -2,33 +2,30 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 
 dotenv.config();
 
-// ✅ FIRST app create karo
 const app = express();
 
+// ✅ CORS (only once)
+app.use(cors({
+  origin: "*",   // 🔥 frontend allow
+  credentials: true
+}));
+
 // middleware
-app.use(cors());
 app.use(express.json());
 
-// routes (example)
+// routes
 import authRoutes from "./routes/authRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
-
-// 🔥 path setup
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// 🔥 frontend serve (APP ke baad likhna)
-
+app.use("/api/users", userRoutes);
 
 // DB connect
 mongoose.connect(process.env.MONGO_URI)

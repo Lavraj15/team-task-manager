@@ -1,4 +1,3 @@
-import Task from "../models/Task.js";
 
 import Task from "../models/Task.js";
 import Project from "../models/Project.js";
@@ -7,23 +6,24 @@ import mongoose from "mongoose";
 // ✅ CREATE TASK
 export const createTask = async (req, res) => {
   try {
-    const { title, dueDate, projectId } = req.body;
+    const { title, description, dueDate, priority, projectId, assignedTo } = req.body;
 
     const task = new Task({
       title,
+      description,
       dueDate,
-      status: "pending",
-      userId: req.user.id,
-      projectId
+      priority,
+      projectId,
+      assignedTo: req.user.id
     });
 
     await task.save();
 
-    // 🔥 MUST: populated response bhejo
     const populated = await Task.findById(task._id)
-      .populate("projectId", "name");
+      .populate("projectId", "name")
+      .populate("assignedTo", "name");
 
-    res.status(201).json(populated);
+    res.json(populated);
 
   } catch (err) {
     res.status(500).json(err.message);
@@ -36,20 +36,21 @@ export const getTasks = async (req, res) => {
   try {
     const { projectId } = req.query;
 
-    let query = { userId: req.user.id };
+    let query = {};
 
-    if (projectId && mongoose.Types.ObjectId.isValid(projectId)) {
+    if (projectId) {
       query.projectId = projectId;
     }
 
     const tasks = await Task.find(query)
-      .populate("projectId", "name")   // 🔥 MUST
+      .populate("projectId", "name")
+      .populate("assignedTo", "name")
       .sort({ createdAt: -1 });
 
     res.json(tasks);
 
   } catch (err) {
-    console.log("GET ERROR:", err);
+    console.log("GET TASK ERROR:", err);
     res.status(500).json(err.message);
   }
 };
@@ -58,10 +59,9 @@ export const getTasks = async (req, res) => {
 // ✅ DELETE TASK
 export const deleteTask = async (req, res) => {
   try {
-    const task = await Task.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id
-    });
+    console.log("DELETE ID:", req.params.id); // 🔥 debug
+
+    const task = await Task.findByIdAndDelete(req.params.id);
 
     if (!task) {
       return res.status(404).json("Task not found");
@@ -70,7 +70,7 @@ export const deleteTask = async (req, res) => {
     res.json({ msg: "Deleted" });
 
   } catch (err) {
-    console.log("DELETE ERROR:", err);
+    console.log(err);
     res.status(500).json(err.message);
   }
 };
@@ -86,6 +86,32 @@ export const updateTask = async (req, res) => {
     ).populate("projectId", "name"); // 🔥 ADD
 
     res.json(updated);
+
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+};
+
+export const getDashboard = async (req, res) => {
+  try {
+    const total = await Task.countDocuments();
+
+    const todo = await Task.countDocuments({ status: "todo" });
+    const progress = await Task.countDocuments({ status: "in-progress" });
+    const done = await Task.countDocuments({ status: "done" });
+
+    const overdue = await Task.countDocuments({
+      dueDate: { $lt: new Date() },
+      status: { $ne: "done" }
+    });
+
+    res.json({
+      total,
+      todo,
+      progress,
+      done,
+      overdue
+    });
 
   } catch (err) {
     res.status(500).json(err.message);
